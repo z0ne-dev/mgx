@@ -17,8 +17,8 @@
 [stars-url]: https://github.com/z0ne-dev/mgx/stargazers
 [issues-shield]: https://img.shields.io/github/issues/z0ne-dev/mgx.svg?
 [issues-url]: https://github.com/z0ne-dev/mgx/issues
-[coverage-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/wiki/z0ne-dev/mgx/coverage-comment-badge.json&
-[coverage-url]: https://github.com/z0ne-dev/mgx
+[coverage-shield]: https://codecov.io/gh/z0ne-dev/mgx/branch/trunk/graph/badge.svg
+[coverage-url]: https://codecov.io/gh/z0ne-dev/mgx
 [license-shield]: https://img.shields.io/github/license/z0ne-dev/mgx.svg?
 [license-url]: https://github.com/z0ne-dev/mgx/blob/master/LICENSE.txt
 [report-shield]: https://goreportcard.com/badge/github.com/z0ne-dev/mgx?
