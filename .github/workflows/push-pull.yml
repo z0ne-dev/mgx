@@ -1,0 +1,39 @@
+name: Test
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.19", "1.20"]
+
+    container: golang:${{ matrix.go-version }}-alpine
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+
+      - name: Run tests
+        run: |
+          go test -v ./...
+          go test -v -race ./...
+        env:
+          POSTGRES: postgres://postgres:postgres@postgres/postgres
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
