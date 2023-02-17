@@ -1,3 +1,4 @@
+// Package mgx is a simple migration tool for pgx
 package mgx
 
 import (
@@ -5,8 +6,10 @@ import (
 	"fmt"
 )
 
+// MigrationFunc is a wrapper around a function so that it implements the Migration interface.
 type MigrationFunc func(context.Context, Commands) error
 
+// Migration is the migration interface
 type Migration interface {
 	fmt.Stringer
 	Run(context.Context, Commands) error
@@ -25,6 +28,7 @@ func (m *migrationFuncWrapper) String() string {
 	return m.name
 }
 
+// NewMigration creates a migration from a function.
 func NewMigration(name string, fn MigrationFunc) Migration {
 	return &migrationFuncWrapper{
 		name: name,
@@ -32,6 +36,7 @@ func NewMigration(name string, fn MigrationFunc) Migration {
 	}
 }
 
+// NewRawMigration creates a migration from a raw SQL string.
 func NewRawMigration(name, sql string) Migration {
 	return &migrationFuncWrapper{
 		name: name,

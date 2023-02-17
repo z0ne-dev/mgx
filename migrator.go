@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"log"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const defaultTableName = "__migrations"

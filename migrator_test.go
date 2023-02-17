@@ -4,10 +4,11 @@ import (
 	"context"
 	_ "embed"
 	"errors"
-	"github.com/jackc/pgx/v5"
-	"github.com/z0ne-dev/mgx"
 	"os"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/z0ne-dev/mgx"
 )
 
 var migrations = []mgx.Migration{
