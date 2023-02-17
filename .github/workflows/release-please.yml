@@ -1,0 +1,14 @@
+name: Release, please
+on:
+  push:
+    branches:
+      - trunk
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: go
+          package-name: mgx
