@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -25,7 +26,17 @@ var migrations = []mgx.Migration{
 	}),
 }
 
-func TestMigrate(t *testing.T) {
+var _ mgx.Logger = (*TestLogger)(nil)
+
+type TestLogger struct {
+	logged bool
+}
+
+func (t *TestLogger) Log(_ string, _ map[string]any) {
+	t.logged = true
+}
+
+func connectToDatabase(t *testing.T) *pgx.Conn {
 	// create db connection
 	url := os.Getenv("POSTGRES")
 	if url == "" {
@@ -36,7 +47,21 @@ func TestMigrate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// TODO: replace with your db connection
+
+	if _, err := db.Exec(context.Background(), "DROP SCHEMA public CASCADE"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(context.Background(), "CREATE SCHEMA public"); err != nil {
+		t.Fatal(err)
+	}
+	return db
+}
+
+func TestMigrate(t *testing.T) {
+	db := connectToDatabase(t)
+	defer func(db *pgx.Conn, ctx context.Context) {
+		_ = db.Close(ctx)
+	}(db, context.Background())
 
 	// create migrator
 	migrator, err := mgx.New(mgx.Migrations(migrations...))
@@ -46,6 +71,82 @@ func TestMigrate(t *testing.T) {
 
 	// run migrator
 	err = migrator.Migrate(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMigrateWithCustomLogger(t *testing.T) {
+	db := connectToDatabase(t)
+	defer func(db *pgx.Conn, ctx context.Context) {
+		_ = db.Close(ctx)
+	}(db, context.Background())
+
+	l := new(TestLogger)
+
+	// create migrator
+	migrator, err := mgx.New(mgx.Log(l))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// run migrator
+	err = migrator.Migrate(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !l.logged {
+		t.Fatal("custom logger was not called")
+	}
+}
+
+func TestMigrateWithCustomTableName(t *testing.T) {
+	db := connectToDatabase(t)
+	defer func(db *pgx.Conn, ctx context.Context) {
+		_ = db.Close(ctx)
+	}(db, context.Background())
+
+	// create migrator
+	tableName := "custom_table_name"
+	migrator, err := mgx.New(mgx.TableName(tableName))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// run migrator
+	err = migrator.Migrate(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check if table exists
+	var rows int
+	if err := db.QueryRow(
+		context.Background(),
+		"SELECT COUNT(*) FROM "+tableName,
+	).Scan(&rows); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPending(t *testing.T) {
+	db := connectToDatabase(t)
+	defer func(db *pgx.Conn, ctx context.Context) {
+		_ = db.Close(ctx)
+	}(db, context.Background())
+
+	// create migrator
+	migrator, err := mgx.New(mgx.Migrations(migrations...))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pending, err := migrator.Pending(context.Background(), db)
+	if err == nil && len(pending) != len(migrations) {
+		err = fmt.Errorf("there should be %d pending migrations, only %d found", len(migrations), len(pending))
+	}
+
 	if err != nil {
 		t.Fatal(err)
 	}

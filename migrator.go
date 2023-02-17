@@ -75,20 +75,8 @@ func New(opts ...Option) (*Migrator, error) {
 
 // Migrate applies all available migrations
 func (m *Migrator) Migrate(ctx context.Context, db Conn) error {
-	// create migrations table if doesn't exist
-	_, err := db.Exec(ctx, fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			id INT8 NOT NULL,
-			version VARCHAR(255) NOT NULL,
-			PRIMARY KEY (id)
-		);
-	`, m.tableName))
-	if err != nil {
-		return err
-	}
-
 	// count applied migrations
-	count, err := countApplied(ctx, db, m.tableName)
+	count, err := m.countApplied(ctx, db, m.tableName)
 	if err != nil {
 		return err
 	}
@@ -96,6 +84,8 @@ func (m *Migrator) Migrate(ctx context.Context, db Conn) error {
 	if count > len(m.migrations) {
 		return errors.New("migrator: applied migration number on db cannot be greater than the defined migration list")
 	}
+
+	m.logger.Log("Running missing migrations...", map[string]any{"missing": len(m.migrations) - count})
 
 	// plan migrations
 	for idx, migration := range m.migrations[count:] {
@@ -123,14 +113,25 @@ func (m *Migrator) Migrate(ctx context.Context, db Conn) error {
 
 // Pending returns all pending (not yet applied) migrations
 func (m *Migrator) Pending(ctx context.Context, db Conn) ([]Migration, error) {
-	count, err := countApplied(ctx, db, m.tableName)
+	count, err := m.countApplied(ctx, db, m.tableName)
 	if err != nil {
 		return nil, err
 	}
 	return m.migrations[count:len(m.migrations)], nil
 }
 
-func countApplied(ctx context.Context, db Conn, tableName string) (int, error) {
+func (m *Migrator) countApplied(ctx context.Context, db Conn, tableName string) (int, error) {
+	// create migrations table if doesn't exist
+	if _, err := db.Exec(ctx, fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			id INT8 NOT NULL,
+			version VARCHAR(255) NOT NULL,
+			PRIMARY KEY (id)
+		);
+	`, m.tableName)); err != nil {
+		return 0, err
+	}
+
 	// count applied migrations
 	var count int
 	row := db.QueryRow(ctx, fmt.Sprintf("SELECT count(*) FROM %s", tableName))
