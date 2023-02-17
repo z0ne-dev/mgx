@@ -1,4 +1,4 @@
-module github.com/z0ne-dev/mgx
+module github.com/z0ne-dev/mgx/v2
 
 go 1.19
 
