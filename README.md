@@ -5,6 +5,7 @@
 [![Apache 2.0][license-shield]][license-url]
 
 [![Go Reference][reference-shield]][reference-url]
+[![Build][build-shield]][build-url]
 [![Coverage][coverage-shield]][coverage-url]
 [![Go Report Card][report-shield]][report-url]
 
@@ -24,6 +25,8 @@
 [report-url]: https://goreportcard.com/report/github.com/z0ne-dev/mgx
 [reference-shield]: https://pkg.go.dev/badge/github.com/z0ne-dev/mgx.svg
 [reference-url]: https://pkg.go.dev/github.com/z0ne-dev/mgx
+[build-shield]: https://github.com/z0ne-dev/mgx/actions/workflows/push-pull.yml/badge.svg
+[build-url]: https://github.com/z0ne-dev/mgx/actions/workflows/push-pull.yml
 
 # mgx
 
