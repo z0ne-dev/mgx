@@ -13,8 +13,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/z0ne-dev/mgx"
+	"github.com/jackc/pgx"
+	"github.com/z0ne-dev/mgx/v2"
 )
 
 var migrations = []mgx.Migration{
