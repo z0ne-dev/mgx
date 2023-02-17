@@ -1,8 +1,14 @@
+// migrator.go Copyright (c) 2023 z0ne.
+// All Rights Reserved.
+// Licensed under the Apache 2.0 License.
+// See LICENSE the project root for license information.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package mgx
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -82,32 +88,39 @@ func (m *Migrator) Migrate(ctx context.Context, db Conn) error {
 	}
 
 	if count > len(m.migrations) {
-		return errors.New("migrator: applied migration number on db cannot be greater than the defined migration list")
+		return ErrTooManyAppliedMigrations
 	}
 
 	m.logger.Log("Running missing migrations...", map[string]any{"missing": len(m.migrations) - count})
 
 	// plan migrations
 	for idx, migration := range m.migrations[count:] {
-		tx, err := db.Begin(ctx)
-		if err != nil {
-			return fmt.Errorf("migrator: error while starting transaction: %v", err)
-		}
-
-		insertVersion := fmt.Sprintf("INSERT INTO %s (id, version) VALUES ($1, $2)", m.tableName)
-		if err := migrate(ctx, tx, m.logger, insertVersion, migration, idx+count); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				panic(fmt.Errorf("migrator: error while rolling back transaction: %v", err))
-			}
-			return fmt.Errorf("migrator: error while running migrations: %v", err)
-		}
-
-		err = tx.Commit(ctx)
-		if err != nil {
-			return fmt.Errorf("migrator: failed to commit transaction: %v", err)
+		err2 := m.applyMigration(ctx, db, migration, idx+count)
+		if err2 != nil {
+			return err2
 		}
 	}
 
+	return nil
+}
+
+func (m *Migrator) applyMigration(ctx context.Context, db Conn, migration Migration, version int) error {
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("migrator: error while starting transaction: %w", err)
+	}
+
+	if errMigration := m.runMigration(ctx, tx, migration, version); errMigration != nil {
+		if errRollback := tx.Rollback(ctx); errRollback != nil {
+			panic(fmt.Errorf("migrator: error while rolling back transaction: %w", errRollback))
+		}
+		return fmt.Errorf("migrator: error while running migrations: %w", errMigration)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("migrator: failed to commit transaction: %w", err)
+	}
 	return nil
 }
 
@@ -143,8 +156,8 @@ func (m *Migrator) countApplied(ctx context.Context, db Conn, tableName string) 
 	return count, nil
 }
 
-func migrate(ctx context.Context, db pgx.Tx, logger Logger, insertVersion string, migration Migration, id int) (err error) {
-	logger.Log("applying migration", map[string]any{
+func (m *Migrator) runMigration(ctx context.Context, db pgx.Tx, migration Migration, id int) (err error) {
+	m.logger.Log("applying migration", map[string]any{
 		"id":   id,
 		"name": migration.String(),
 	})
@@ -154,12 +167,13 @@ func migrate(ctx context.Context, db pgx.Tx, logger Logger, insertVersion string
 		return fmt.Errorf("error executing golang migration %s: %w", migration.String(), err)
 	}
 
+	insertVersion := fmt.Sprintf("INSERT INTO %s (id, version) VALUES ($1, $2)", m.tableName)
 	if _, err = db.Exec(ctx, insertVersion, id, migration.String()); err != nil {
 		return fmt.Errorf("error updating migration versions: %w", err)
 	}
 	duration := time.Since(start)
 
-	logger.Log("applied migration", map[string]any{
+	m.logger.Log("applied migration", map[string]any{
 		"id":   id,
 		"name": migration.String(),
 		"took": duration,

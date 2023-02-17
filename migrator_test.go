@@ -1,10 +1,15 @@
+// migrator_test.go Copyright (c) 2023 z0ne.
+// All Rights Reserved.
+// Licensed under the Apache 2.0 License.
+// See LICENSE the project root for license information.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package mgx_test
 
 import (
 	"context"
 	_ "embed"
-	"errors"
-	"fmt"
 	"os"
 	"testing"
 
@@ -14,7 +19,10 @@ import (
 
 var migrations = []mgx.Migration{
 	mgx.NewRawMigration("raw migration: single query, create table foo", "CREATE TABLE foo (id INT PRIMARY KEY)"),
-	mgx.NewRawMigration("raw migration: multi query, create table bar, alter table bar", "CREATE TABLE bar (id INT PRIMARY KEY); ALTER TABLE bar ADD COLUMN name VARCHAR(255)"),
+	mgx.NewRawMigration(
+		"raw migration: multi query, create table bar, alter table bar",
+		"CREATE TABLE bar (id INT PRIMARY KEY); ALTER TABLE bar ADD COLUMN name VARCHAR(255)",
+	),
 	mgx.NewMigration("fn migration", func(ctx context.Context, cmd mgx.Commands) error {
 		if _, err := cmd.Exec(ctx, "CREATE TABLE foobar (id INT PRIMARY KEY)"); err != nil {
 			return err
@@ -37,10 +45,12 @@ func (t *TestLogger) Log(_ string, _ map[string]any) {
 }
 
 func connectToDatabase(t *testing.T) *pgx.Conn {
+	t.Helper()
+
 	// create db connection
 	url := os.Getenv("POSTGRES")
 	if url == "" {
-		t.Fatal(errors.New("POSTGRES env variable is not set"))
+		t.Fatal("POSTGRES env variable is not set")
 	}
 
 	db, err := pgx.Connect(context.Background(), url)
@@ -144,7 +154,7 @@ func TestPending(t *testing.T) {
 
 	pending, err := migrator.Pending(context.Background(), db)
 	if err == nil && len(pending) != len(migrations) {
-		err = fmt.Errorf("there should be %d pending migrations, only %d found", len(migrations), len(pending))
+		t.Fatalf("there should be %d pending migrations, only %d found", len(migrations), len(pending))
 	}
 
 	if err != nil {
