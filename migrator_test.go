@@ -3,7 +3,10 @@ package mgx_test
 import (
 	"context"
 	_ "embed"
+	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/z0ne-dev/mgx"
+	"os"
 	"testing"
 )
 
@@ -23,6 +26,15 @@ var migrations = []mgx.Migration{
 
 func TestMigrate(t *testing.T) {
 	// create db connection
+	url := os.Getenv("POSTGRES")
+	if url == "" {
+		t.Fatal(errors.New("POSTGRES env variable is not set"))
+	}
+
+	db, err := pgx.Connect(context.Background(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
 	// TODO: replace with your db connection
 
 	// create migrator
@@ -32,7 +44,7 @@ func TestMigrate(t *testing.T) {
 	}
 
 	// run migrator
-	err := migrator.Migrate(context.Background(), db)
+	err = migrator.Migrate(context.Background(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
