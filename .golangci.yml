@@ -1,6 +1,6 @@
 output:
-  format: colored-line-number,github-actions
-  sort-results: false
+  format: colored-line-number
+  sort-results: true
 
 linters:
   enable:
