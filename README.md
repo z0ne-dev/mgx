@@ -40,7 +40,7 @@ The migration system keeps track of which migrations have been executed and whic
 
 1. Install the dependency
 ```sh
-go get -u github.com/z0ne-dev/mgx
+go get -u github.com/z0ne-dev/mgx/v2
 ```
 2. Import the package and create a new migrator
 ```go
