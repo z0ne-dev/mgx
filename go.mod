@@ -1,6 +1,6 @@
 module github.com/z0ne-dev/mgx
 
-go 1.20
+go 1.19
 
 require github.com/jackc/pgx/v5 v5.3.0
 
