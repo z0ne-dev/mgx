@@ -29,9 +29,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
 
       - name: Run tests
-        run: |
-          go test -v ./...
-          go test -v -race ./...
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
         env:
           POSTGRES: postgres://postgres:postgres@postgres/postgres
 
